@@ -1,0 +1,1 @@
+/usr/bin/beeline -u ${beeline} -e "${command}"

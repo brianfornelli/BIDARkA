@@ -1,0 +1,29 @@
+/*
+create table dl_aa_tm_cons.eder_columntypemap
+(
+	columnformat char(2),
+	columntypetext varchar(50)
+) no primary index
+;
+
+insert into dl_aa_tm_cons.eder_columntypemap(columnformat, columntypetext) values ('CF','CHAR');
+insert into dl_aa_tm_cons.eder_columntypemap(columnformat, columntypetext) values ('CV','VARCHAR');
+insert into dl_aa_tm_cons.eder_columntypemap(columnformat, columntypetext) values ('D','DECIMAL');
+insert into dl_aa_tm_cons.eder_columntypemap(columnformat, columntypetext) values ('DA','DATE');
+insert into dl_aa_tm_cons.eder_columntypemap(columnformat, columntypetext) values ('F','FLOAT');
+insert into dl_aa_tm_cons.eder_columntypemap(columnformat, columntypetext) values ('I I','INTEGER');
+insert into dl_aa_tm_cons.eder_columntypemap(columnformat, columntypetext) values ('I1','BYTEINT');
+insert into dl_aa_tm_cons.eder_columntypemap(columnformat, columntypetext) values ('I2','SMALLINT');
+insert into dl_aa_tm_cons.eder_columntypemap(columnformat, columntypetext) values ('I8','BIGINT');
+insert into dl_aa_tm_cons.eder_columntypemap(columnformat, columntypetext) values ('N','NUMBER');
+*/
+select c.databasename, c.tablename, c.columnname,
+		case when m.columntypetext = 'DECIMAL' then 'DECIMAL(' || cast(zeroifnull(c.decimaltotaldigits) as varchar(10)) || ',' ||cast(zeroifnull(c.decimalfractionaldigits) as varchar(10)) || ')'
+			when m.columntypetext in ('CHAR', 'VARCHAR') then m.columntypetext || '(' || cast(zeroifnull(c.columnlength) as varchar(10)) || ')'
+			else m.columntypetext
+		end as txt
+	from dbc.columns c
+		left join dl_ds_d_s.eio_columntypemap m on c.columntype = m.columnformat
+	where c.databasename = '${database}' and c.tablename = '${tablename}'
+	order by c.columnid
+;

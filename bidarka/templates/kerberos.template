@@ -1,0 +1,30 @@
+#!/bin/bash
+
+function hdp_keytab {
+
+PRINCIPAL="$${USER^^}@US.AD.WELLPOINT.COM"
+password=$$1
+rm /home/$$USER/ds_keychain/$$USER.keytab >/dev/null
+	{
+	echo "addent -password -p $${PRINCIPAL} -k 1 -e aes256-cts"
+      	sleep 1
+      	echo "$$password"
+      	sleep 1
+      	echo "wkt /home/$$USER/ds_keychain/$$USER.keytab"
+    	sleep 1
+	echo "list"
+	} | ktutil >/dev/null
+
+kdestroy
+kinit -kt /home/$$USER/ds_keychain/$$USER.keytab $${USER^^}@US.AD.WELLPOINT.COM
+
+hadoop fs -test -d /user/$$USER >/dev/null
+if [[ $$? -eq 0 ]];then
+echo -e "\nHadoop Kerberos Keytab file created/updated successfully and validated.."
+else
+echo "Ooops - Password incorrect. Hadoop Kerberos Authentication failed"
+fi
+
+}
+
+hdp_keytab "${PASSWORD}"

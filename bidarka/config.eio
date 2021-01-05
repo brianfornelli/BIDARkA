@@ -1,0 +1,46 @@
+BTEQ_CONFIG = dict(SYSTEM='DWPROD2COP1',
+                   USERNAME="",
+                   PASSWORD="")
+
+SQOOP_CONFIG = dict(USERNAME="",
+                    password_file="",
+                    tdhost="30.128.223.28",
+                    teradata_database="dl_aa_tm_ds_s",
+                    teradata_table_inbound="",
+                    hive_table_inbound="",
+                    hive_database="hcaadvaph_wk_playground",
+                    num_mappers="8",
+                    outdir="",
+                    primary_key="indx")
+
+BEELINE_CONFIG = dict(beeline='jdbc:hive2://dwbddisc1hs2lb.wellpoint.com:10000/default;principal=hive/_HOST@US.AD.WELLPOINT.COM;ssl=true')
+
+oldIMPALA_CONFIG = {
+    "host": "dwbddisc1implb.wellpoint.com",
+    "port": 21050,
+    "auth_mechanism": "GSSAPI",
+    "use_ssl": True
+}
+
+IMPALA_CONFIG = {
+    "host": "dwbddisc1r1m.wellpoint.com",
+    "port": 9083,
+    "auth_mechanism": "GSSAPI",
+    "use_ssl": True
+}
+
+SPARK_CONFIG = {
+    "spark_submit": "/usr/bin/spark-submit",
+    "spark_master": "--master yarn",
+    "spark_properties": ['--executor-cores 4', '--executor-memory 10G', '--driver-memory 15G'],
+    "spark_conf": ['spark.driver.maxResultSize=20g',
+                   'spark.yarn.executor.memoryOverhead=7000', 'spark.kryoserializer.buffer.max.mb=512']
+}
+
+TERADATA_CONFIG = dict(
+    ODBCINI='/opt/teradata/client/ODBC_64/odbc.ini',
+    appName='BIDARkA',
+    system='DWPROD2COP1',
+    authentication='LDAP',
+    method='odbc'
+)

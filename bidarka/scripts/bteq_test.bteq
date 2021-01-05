@@ -1,0 +1,5 @@
+.LOGMECH LDAP
+.LOGON ${SYSTEM}/${USERNAME}, ${PASSWORD};
+select current_date;
+.QUIT
+.LOGOFF
