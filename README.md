@@ -21,9 +21,7 @@ Installing local version BIDARkA
 <br/>
 
 
-```bash
-git clone https://AD09492@bitbucket.anthem.com/scm/dsuw/bidarka-tool.git
-```
+
 
 <font face="verdana,arial,sans-serif" color='gray' size="2.0em">
 Requirements
@@ -52,8 +50,7 @@ Developers
 
 |Name|E-mail
 |:---|---|
-|Brian Fornelli|brian.fornelli@anthem.com   |
-|Kim Yao|jinhui.yao@anthem.com|
+|Brian Fornelli|brian.fornelli@gmail.com   |
 
 ---
 
