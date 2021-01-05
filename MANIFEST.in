@@ -1,3 +1,4 @@
 include README.md
 include bidarka/templates/*
 include bidarka/scripts/*
+include bidarka/run_settings.config

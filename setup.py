@@ -8,15 +8,13 @@ from setuptools import find_packages, setup
 NAME = 'bidarka'
 DESCRIPTION = 'BIg Data ARchitecture Abstraction tool'
 URL = 'unknown'
-EMAIL = 'brian.fornelli@anthem.com, jinhui.yao@anthem.com'
-AUTHOR = 'brian.fornelli@anthem.com, jinhui.yao@anthem.com'
-REQUIRES_PYTHON = '>=2.7'
+EMAIL = 'brianfornelli@gmail.com'
+AUTHOR = 'brianfornelli@gmail.com'
+REQUIRES_PYTHON = '>=3.6'
 #from bidarka import __version__ as VERSION
 VERSION = None
 
-REQUIRED = [
-    'impyla>=0.14.1','Teradata==15.10.0.20'
-]
+REQUIRED = ['pyspark>=0.2.3', 'numpy', 'pandas']
 
 here = os.path.abspath(os.path.dirname(__file__))
 
@@ -33,6 +31,9 @@ if not VERSION:
 else:
     about['__version__'] = VERSION
 
+#with open('requirements.txt') as f:
+    #REQUIRED = f.read().splitlines()
+
 setup(
     name=NAME,
     version=about['__version__'],
@@ -48,8 +49,13 @@ setup(
     include_package_data=True,
     license='Proprietary',
     classifiers=[
-        'Programming Language :: Python :: 2.7',
+        'Programming Language :: Python :: 3.6',
         'License :: Other/Proprietary License',
         'Operating System :: POSIX :: Linux'
-    ]
+    ],
+    entry_points = {
+        'console_scripts': [
+            'bidarka = bidarka._cmdline:main'
+        ]
+    }
 )

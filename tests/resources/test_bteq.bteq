@@ -1,0 +1,5 @@
+.LOGMECH LDAP
+.LOGON DWPROD2COP1/${USERNAME}, ${PASSWORD};
+    select current_date;
+.QUIT
+.LOGOFF

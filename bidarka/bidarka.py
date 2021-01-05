@@ -1,41 +1,39 @@
-import os.path as osp
-from _sqoop import sqoop as __sqoop
-from _spark import spark as __spark
-from _bteq import bteq as __bteq
-from _hive import hive_hql as __hive_hql, beeline as __beeline
-from _impala import invalidate_metadata as __invalidate_metadata, fetch_hive_df as __fetch_hive_df
-from _kerberos import renew_kerberos as __renew_kerberos
-from _credentials import prompt_password as __prompt_password
-from _util import read_config as __read_config
-from _teradata import fetch_fast_df as __fetch_fast_df, fetch_odbc_df as __fetch_odbc_df, execute_script as __execute_script
+from ._sqoop import sqoop as __sqoop
+from ._spark import spark as __spark
+from ._bteq import bteq as __bteq
+from ._beeline import beeline as __beeline, hive_hql as __hive_hql
+from ._credentials import prompt_password as __prompt_password
+from ._util import read_settings as __read_settings, script_path
 
 
-def sqoop(tdb, ttable, hdb, htable, payload={}):
+def sqoop(tdb, ttable, hdb, htable, primary_key=None, num_mappers=8, payload={}) -> None:
     """
-    Sqoops the teradata table tdb.ttable into hive hdb.htable
-    :param tdb:  Teradata database
+    Sqoops the data in from Teradata to Hive
+    :param tdb: Teradata database
     :param ttable: Teradata table
-    :param hdb:  Hive database
-    :param htable:  Hive table
-    :param payload:  payload of k:v pairs
+    :param hdb: Hive database
+    :param htable: Hive table
+    :param primary_key: key to use for split/partitions [optional]
+    :param num_mappers: number of mappers [optional]
+    :param payload: key, value pairs to pass to update behavior [optional]
     :return:
     """
-    __sqoop(tdb, ttable, hdb, htable, payload)
+    __sqoop(tdb=tdb, ttable=ttable, hdb=hdb, htable=htable, primary_key=primary_key,
+            num_mappers=num_mappers, payload=payload)
 
 
-def spark(path, payload={}, configuration=None):
+def spark(path, payload={}, configuration=None) -> None:
     """
     Runs a spark program *.py at given path
     :param path: path/to/sparkjob.py
     :param payload: kv pairs to pass as a configuration
-    :param configuration: [optional] spark configuration dictionary object
-        see config.ini for an example
+    :param configuration: [optional] spark configuration dictionary items that update spark settings
     :return:
     """
     __spark(path, payload, configuration)
 
 
-def bteq(script_path, payload={}):
+def bteq(script_path, payload={}) -> None:
     """
     Runs a .bteq script
     :param script_path: path/to/bteq
@@ -45,7 +43,7 @@ def bteq(script_path, payload={}):
     __bteq(script_path, payload)
 
 
-def hive_hql(path, payload={}):
+def hive_hql(path, payload={}) -> None:
     """
     Runs a .hql script via beeline
     :param path: /path/to/hql
@@ -55,7 +53,7 @@ def hive_hql(path, payload={}):
     __hive_hql(path, payload)
 
 
-def hive_drop(db, table):
+def hive_drop(db, table) -> None:
     """
     Safe drop of hive table
     :param db: database
@@ -75,33 +73,6 @@ def beeline(command, payload={}):
     __beeline(command, payload)
 
 
-def invalidate_metadata(db, tbl):
-    """
-    Invalidate the table so that impalay can be used
-    :param db:
-    :param tbl:
-    :return:
-    """
-    __invalidate_metadata(db, tbl)
-
-
-def fetch_hive_df(sql):
-    """
-    Fetch the table using sql into a pandas dataframe using impala
-    :param sql: select code
-    :return:
-    """
-    return __fetch_hive_df(sql)
-
-
-def renew_kerberos():
-    """
-    Renew the kerberos ticket
-    :return:
-    """
-    __renew_kerberos()
-
-
 def prompt_password():
     """
     Prompt for the password... this should show up in IDE but if it doesn't check the running command-line
@@ -110,79 +81,26 @@ def prompt_password():
     __prompt_password()
 
 
-def hive_csv(db, table, path, orderby=None):
-    """
-    Convert a Hive table to csv.gz
-    :param db: database
-    :param table: tablename
-    :param path: destination path
-    :param orderby: ordering [optinoal]
-    :return:
-    """
-    if orderby is None:
-        sql = "select * from {}.{}".format(db, table)
-    else:
-        sql = "select * from {}.{} order by {}".format(db, table, orderby)
-    payload = dict(local=path, sql=sql)
-    filepath = osp.join(osp.dirname(__file__), 'scripts/hive_csv.py')
-    spark(filepath, payload=payload)
-
-
-def csv_hive(db, table, path):
-    """
-    Convert a CSV table to Hive
-    :param db: destination database
-    :param table: destination table
-    :param path: path/to/csv
-    :return:
-    """
-    payload = dict(csv_path=path, hive_database=db, hive_table=table)
-    filepath = osp.join(osp.dirname(__file__), 'scripts/csv_hive.py')
-    spark(filepath, payload=payload)
-
-
 def read_config(key=None):
     """
-    Read the config.ini file
+    Read the settings file
     :param key:
     :return:
     """
-    config = __read_config()
+    config = __read_settings()
     if key is None:
         return config
     else:
         return getattr(config, key, None)
 
 
-def fetch_fast_df(db, tbl, index_column='indx'):
+def read_settings(key=None):
     """
-    [Experimental] Pulls table from teradata using TPT into a pandas dataframe very fast.
-    :param db: database
-    :param tbl: table
-    :param index_column: indexing key
-    :return: pandas dataframe of table
-    """
-    return __fetch_fast_df(db, tbl, index_column)
-
-
-def fetch_odbc_df(sql, configuration={}):
-    """
-    Fetch data from Teradata into a pandas dataframe
-    :param sql: Valid SQL
-    :param configuration: Configuration for teradata connection
+    Read settings file
+    :param key:
     :return:
     """
-    return __fetch_odbc_df(sql, configuration)
-
-
-def execute_script(script, configuration={}):
-    """
-    Executes a valid SQL script on teradata
-    :param script: path/to/script
-    :param configuration: Teradata configuration
-    :return:
-    """
-    __execute_script(script, configuration)
+    return read_config(key)
 
 
 def spark_csr_local(feature_path, meta_path, table_name, n, sort=False, key=None):
@@ -199,7 +117,7 @@ def spark_csr_local(feature_path, meta_path, table_name, n, sort=False, key=None
     :param key:  Key for sorting ignored if sorted=False
     :return: None
     """
-    path = osp.join(osp.dirname(__file__), "scripts/build_csr_matrix.py")
+    path = script_path("scripts/build_csr_matrix.py")
     spark(path, payload=dict(feature_path=feature_path, meta_path=meta_path,
                              table_name=table_name, n=n, sort=sort, key=key))
 
@@ -219,6 +137,37 @@ def tapeworm(idb, itbl, odb, otbl, primary_key, col_path):
     with open(col_path, "r") as f:
         lines = f.readlines()
     column_list = ",".join(lines)
-    worm_path = osp.join(osp.dirname(__file__), "scripts/tapeworm.hql")
+    worm_path = script_path("scripts/tapeworm.hql")
     hive_hql(path=worm_path, payload=dict(idb=idb, itbl=itbl, odb=odb, otbl=otbl, primary_key=primary_key,
                                           column_list=column_list))
+
+
+def hive_csv(db, table, path, orderby=None):
+    """
+    Convert a Hive table to csv.gz
+    :param db: database
+    :param table: tablename
+    :param path: destination path
+    :param orderby: ordering [optinoal]
+    :return:
+    """
+    if orderby is None:
+        sql = "select * from {}.{}".format(db, table)
+    else:
+        sql = "select * from {}.{} order by {}".format(db, table, orderby)
+    payload = dict(local=path, sql=sql)
+    filepath = script_path('scripts/hive_csv.py')
+    spark(filepath, payload=payload)
+
+
+def csv_hive(db, table, path):
+    """
+    Convert a CSV table to Hive
+    :param db: destination database
+    :param table: destination table
+    :param path: path/to/csv
+    :return:
+    """
+    payload = dict(csv_path=path, hive_database=db, hive_table=table)
+    filepath = script_path('scripts/csv_hive.py')
+    spark(filepath, payload=payload)

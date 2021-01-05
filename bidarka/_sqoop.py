@@ -1,59 +1,51 @@
-from _util import read_config, script_path
+from ._util import read_settings, read_template, template_transform
+from ._credentials import get_dir, get_user, get_password
 import subprocess
 import logging
-from string import Template
-import os.path as osp
-import os
 import tempfile
+import os
+import os.path as osp
 
 logging.basicConfig(format='%(message)s', level=logging.INFO)
 
 
-def sqoop(tdb, ttable, hdb, htable, payload={}):
-    config = read_config()
-    sqoop_config = config.SQOOP_CONFIG
+def sqoop(tdb, ttable, hdb, htable, primary_key=None, num_mappers=8, payload={}) -> None:
+    settings = read_settings()
+    settings.USERNAME = get_user()
+    settings.PASSWORD = get_password()
+    sqoop_config = settings.SQOOP_CONFIG
     outdir = _get_dir()
-    script = _read_template()
+    script = read_template("templates/sqoop.template")
+    if primary_key is not None:
+        d = dict(num_mappers_statement="--create-hive-table -m {}".format(num_mappers),
+                 primary_key_statement="--split-by {}".format(primary_key))
+    else:
+        d = dict(num_mappers_statement="--create-hive-table -m 1", primary_key_statement="")
+    payload.update(d)
     try:
-        password_file = write_temp_pfile(config.PASSWORD)
-        sqoop_config.update(
-            dict(USERNAME=config.USERNAME, teradata_database=tdb, teradata_table_inbound=ttable, hive_database=hdb,
-                 hive_table_inbound=htable, outdir=outdir, password_file=password_file))
-        src = Template(script)
-        script_text = src.substitute(sqoop_config, **payload)
-        logging.info(script_text)
+        password_file = _write_temp_pfile(directory=outdir, password=settings.PASSWORD)
+        sqoop_config.update(dict(USERNAME=settings.USERNAME, teradata_database=tdb, teradata_table_inbound=ttable,
+                                 hive_database=hdb, hive_table_inbound=htable, outdir=outdir,
+                                 password_file=password_file))
+        script_text = template_transform(script, sqoop_config, payload)
         subprocess.check_call(script_text.split())
-    except Exception, e:
+    except Exception as e:
         raise e
     finally:
         os.unlink(password_file)
 
 
 def _get_dir():
-    dirpath = osp.join(osp.abspath(osp.expanduser("~")), "ds_keychain/sqoop")
-    if not osp.exists(dirpath):
-        os.makedirs(dirpath)
-    return dirpath
+    directory = get_dir()
+    home = osp.join(directory, 'sqoop')
+    if not osp.exists(home):
+        os.makedirs(home)
+    return home
 
 
-def write_temp_pfile(password):
-    home = osp.join(osp.abspath(osp.expanduser("~")), "ds_keychain/sqoop")
-    f = tempfile.NamedTemporaryFile(delete=False, dir=home)
+def _write_temp_pfile(directory, password):
+    f = tempfile.NamedTemporaryFile(delete=False, dir=directory, mode="w")
+    logging.debug("Writing password file here: {}".format(f.name))
     f.write(password)
     f.close()
     return f.name
-
-
-def _read_template():
-    path = script_path("templates/sqoop.template")
-    with open(path, 'r') as f:
-        src = f.read()
-    return src
-
-
-if __name__ == '__main__':
-    tdb = 'dl_aa_tm_ds_s'
-    ttable = 'uw_grp_val_dense'
-    hdb = 'hcaadvaph_wk_playground'
-    htable = 'bidarka2_test'
-    sqoop(tdb=tdb, ttable=ttable, hdb=hdb, htable=htable)
